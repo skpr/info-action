@@ -1,0 +1,32 @@
+# action.yml
+name: Skpr Info
+description: Get Skpr info for the current environment
+inputs:
+  env:
+    description: The environment
+    required: true
+
+outputs:
+  url:
+    description: The Skpr environment URL
+    value: ${{ steps.skpr-info.outputs.url }}
+  version:
+    description: The version being deployed to the Skpr environment (uses git describe).
+    value: ${{ steps.skpr-version.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - id: skpr-version
+      run: |
+        version=$(git describe --tags --always)
+        echo "Version: $version"
+        echo "::set-output name=version::$version"
+      shell: bash
+    - id: skpr-info
+      run: |
+        domain=$(skpr info ${{ inputs.env }} | jq -r ".Ingress.Domain")
+        url=https://$domain
+        echo "URL: $url"
+        echo "::set-output name=url::$url"
+      shell: bash
